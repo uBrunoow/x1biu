@@ -1,5 +1,8 @@
+"use client";
+
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface Player {
   nickname: string;
@@ -10,8 +13,10 @@ interface Player {
 }
 
 async function getRanking(): Promise<Player[]> {
+  console.log("Fetching ranking data...");
   try {
     const res = await api.get("ranking");
+    console.log("Ranking data:", res.data);
     return res.data as Player[];
   } catch {
     return [];
@@ -38,8 +43,21 @@ function StreakBadge({ streak }: { streak: number }) {
   );
 }
 
-export default async function RankingPage() {
-  const players = await getRanking();
+export default function RankingPage() {
+  const [players, setPlayers] = useState<Player[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const ranking = await getRanking();
+      setPlayers(ranking);
+    };
+
+    load();
+
+    const interval = setInterval(load, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="screen-enter" style={{ flex: 1, overflow: "auto", padding: "28px 26px 40px" }}>
