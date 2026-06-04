@@ -1,0 +1,70 @@
+services:
+  # ── PostgreSQL ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: x1biu-postgres
+    environment:
+      POSTGRES_DB: ${DJANGO_DB_NAME}
+      POSTGRES_USER: ${DJANGO_DB_USER}
+      POSTGRES_PASSWORD: ${DJANGO_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker-data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ── Redis ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: x1biu-redis
+    command: redis-server --save 60 1 --loglevel warning --dir /data
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker-data/redis:/data
+    restart: unless-stopped
+
+  # ── Celery worker ─────────────────────────────────────────
+  celery:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: x1biu-celery
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ../.env
+    command: python -m celery -A config worker -l info
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  # ── Celery Beat (scheduler) ───────────────────────────────
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: x1biu-celery-beat
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ../.env
+    command: python -m celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  # ── PgAdmin ───────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: x1biu-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - ./docker-data/pgadmin:/var/lib/pgadmin
+    restart: unless-stopped

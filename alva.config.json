@@ -1,0 +1,42 @@
+{
+  "version": "1",
+  "project": {
+    "name": "x1biu",
+    "created_at": "2026-06-03",
+    "bootstrap_version": "2"
+  },
+  "backend": {
+    "enabled": true,
+    "framework": "django",
+    "asgi_server": "uvicorn",
+    "db_engine": "postgresql",
+    "unfold": true,
+    "swagger": "scalar",
+    "prometheus": false,
+    "celery": true,
+    "linter": "ruff",
+    "tests": {
+      "enabled": true,
+      "framework": "pytest"
+    }
+  },
+  "frontend": {
+    "enabled": true,
+    "framework": "nextjs",
+    "package_manager": "pnpm",
+    "kubb": true,
+    "unit_tests": "vitest",
+    "e2e_tests": "playwright",
+    "linter": "biome"
+  },
+  "docker": {
+    "enabled": true,
+    "extras": ["pgadmin", "redis"]
+  },
+  "tooling": {
+    "build_tool": "make",
+    "env_template": ".env.example",
+    "backlog": true,
+    "claude_config": true
+  }
+}

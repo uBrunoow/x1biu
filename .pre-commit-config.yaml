@@ -1,0 +1,66 @@
+# .pre-commit-config.yaml (Raiz do Monorepo)
+# Centraliza a validação de Frontend e Backend antes de cada commit
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # --------------------------------------------------------------------------
+  # BACKEND HOOKS (Python/Django)
+  # --------------------------------------------------------------------------
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: local
+    hooks:
+      - id: backend-tests
+        name: Django Backend Tests
+        entry: bash -c 'cd backend && uv run pytest -v --tb=short'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-checks
+        name: Django System Check
+        entry: bash -c 'cd backend && uv run python manage.py check'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: bandit
+        name: Bandit Security Scan
+        entry: bash -c 'cd backend && uv run bandit -r . -x ./tests,./.venv -ll'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+  # --------------------------------------------------------------------------
+  # FRONTEND HOOKS (Next.js/TS)
+  # --------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: frontend-qa
+        name: Frontend QA (Tests & Build)
+        entry: bash -c 'cd frontend && pnpm run qa'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-commit]
