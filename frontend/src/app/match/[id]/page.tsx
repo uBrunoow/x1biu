@@ -77,80 +77,138 @@ export default function MatchPage() {
 
   useEffect(() => {
     if (phase !== "count") return;
+    // if (count <= 0) {
+    //   setPhase("play");
+    //   startTimeRef.current = performance.now();
+
+    //   // if (songUrl) {
+    //   //   const audio = new Audio(songUrl);
+    //   //   audioRef.current = audio;
+    //   //   audio.muted = true;
+    //   //   audio.play().then(() => { audio.muted = false; }).catch(console.error);
+    //   //   audio.addEventListener("ended", sendSongEnded, { once: true });
+    //   // }
+
+    //   if (songUrl) {
+    //     console.log("songUrl:", songUrl);
+
+    //     const audio = new Audio();
+
+    //     audio.crossOrigin = "anonymous";
+    //     audio.preload = "auto";
+    //     audio.src = songUrl;
+
+    //     audioRef.current = audio;
+
+    //     audio.addEventListener("loadstart", () => {
+    //       console.log("audio loadstart");
+    //     });
+
+    //     audio.addEventListener("loadedmetadata", () => {
+    //       console.log("audio loadedmetadata");
+    //     });
+
+    //     audio.addEventListener("canplay", () => {
+    //       console.log("audio canplay");
+    //     });
+
+    //     audio.addEventListener("canplaythrough", async () => {
+    //       console.log("audio canplaythrough");
+
+    //       try {
+    //         audio.muted = true;
+
+    //         await audio.play();
+
+    //         audio.muted = false;
+
+    //         console.log("audio playing");
+    //       } catch (err) {
+    //         console.error("play error", err);
+    //       }
+    //     });
+
+    //     audio.addEventListener("error", () => {
+    //       console.error("audio error", {
+    //         code: audio.error?.code,
+    //         message: audio.error?.message,
+    //         networkState: audio.networkState,
+    //         readyState: audio.readyState,
+    //         currentSrc: audio.currentSrc,
+    //       });
+    //     });
+
+    //     audio.addEventListener("ended", sendSongEnded, {
+    //       once: true,
+    //     });
+
+    //     audio.load();
+    //   }
+
+    //   startMic();
+
+    //   frameRef.current = 0;
+    //   frameTimerRef.current = setInterval(() => { frameRef.current += 1; }, 50);
+    //   return;
+    // }
+
     if (count <= 0) {
       setPhase("play");
       startTimeRef.current = performance.now();
 
-      // if (songUrl) {
-      //   const audio = new Audio(songUrl);
-      //   audioRef.current = audio;
-      //   audio.muted = true;
-      //   audio.play().then(() => { audio.muted = false; }).catch(console.error);
-      //   audio.addEventListener("ended", sendSongEnded, { once: true });
-      // }
+      const startAudio = async () => {
+        if (!songUrl) return;
 
-      if (songUrl) {
-        console.log("songUrl:", songUrl);
+        try {
+          const res = await fetch(songUrl);
 
-        const audio = new Audio();
+          console.log("status", res.status);
+          console.log(
+            "content-type",
+            res.headers.get("content-type")
+          );
 
-        audio.crossOrigin = "anonymous";
-        audio.preload = "auto";
-        audio.src = songUrl;
+          const blob = await res.blob();
 
-        audioRef.current = audio;
+          console.log("blob type", blob.type);
+          console.log("blob size", blob.size);
 
-        audio.addEventListener("loadstart", () => {
-          console.log("audio loadstart");
-        });
+          const audio = new Audio();
 
-        audio.addEventListener("loadedmetadata", () => {
-          console.log("audio loadedmetadata");
-        });
+          audio.crossOrigin = "anonymous";
+          audio.preload = "auto";
+          audio.src = songUrl;
 
-        audio.addEventListener("canplay", () => {
-          console.log("audio canplay");
-        });
+          audioRef.current = audio;
 
-        audio.addEventListener("canplaythrough", async () => {
-          console.log("audio canplaythrough");
-
-          try {
-            audio.muted = true;
-
-            await audio.play();
-
-            audio.muted = false;
-
-            console.log("audio playing");
-          } catch (err) {
-            console.error("play error", err);
-          }
-        });
-
-        audio.addEventListener("error", () => {
-          console.error("audio error", {
-            code: audio.error?.code,
-            message: audio.error?.message,
-            networkState: audio.networkState,
-            readyState: audio.readyState,
-            currentSrc: audio.currentSrc,
+          audio.addEventListener("error", () => {
+            console.error("audio error", audio.error);
           });
-        });
 
-        audio.addEventListener("ended", sendSongEnded, {
-          once: true,
-        });
+          audio.addEventListener(
+            "ended",
+            sendSongEnded,
+            { once: true }
+          );
 
-        audio.load();
-      }
+          await audio.play();
+        } catch (err) {
+          console.error("audio startup failed", err);
+        }
+      };
+
+      startAudio();
 
       startMic();
 
       frameRef.current = 0;
-      frameTimerRef.current = setInterval(() => { frameRef.current += 1; }, 50);
+      frameTimerRef.current = setInterval(() => {
+        frameRef.current += 1;
+      }, 50);
+
       return;
     }
+
     const id = setTimeout(() => setCount((c) => c - 1), 750);
     return () => clearTimeout(id);
   }, [phase, count, songUrl, startMic, sendSongEnded]);
