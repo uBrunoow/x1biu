@@ -1,41 +1,84 @@
-# Produção — configure variáveis via secrets ou .env gerenciado externamente
-version: '3.9'
-
+# Produção — configure variáveis via .env na raiz do projeto
 services:
+
+  # ── Nginx Proxy Manager ───────────────────────────────────
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: x1biu-npm
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"   # admin UI — bloqueie no firewall após configurar
+    volumes:
+      - ./docker-data/npm/data:/data
+      - ./docker-data/npm/letsencrypt:/etc/letsencrypt
+    restart: always
+
+  # ── Django (ASGI via uvicorn) ─────────────────────────────
   backend:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    ports:
-      - "8000:8000"
+    container_name: x1biu-backend
     env_file:
       - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      - db
+      - redis
     restart: always
 
+  # ── PostgreSQL ────────────────────────────────────────────
   db:
     image: postgres:16-alpine
+    container_name: x1biu-db
     environment:
-      POSTGRES_DB:       ${DB_NAME}
-      POSTGRES_USER:     ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DJANGO_DB_NAME}
+      POSTGRES_USER: ${DJANGO_DB_USER}
+      POSTGRES_PASSWORD: ${DJANGO_DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./docker-data/postgres:/var/lib/postgresql/data
     restart: always
 
-volumes:
-  postgres_data:
-
+  # ── Redis ─────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
+    container_name: x1biu-redis
+    command: redis-server --save 60 1 --loglevel warning --dir /data
+    volumes:
+      - ./docker-data/redis:/data
     restart: always
 
+  # ── Celery worker ─────────────────────────────────────────
   celery:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+    container_name: x1biu-celery
     env_file:
       - ../.env
-    command: celery -A config worker --loglevel=info
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    command: celery -A config worker --loglevel=info --concurrency=2
     depends_on:
       - redis
+      - db
+    restart: always
+
+  # ── Celery Beat (scheduler) ───────────────────────────────
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: x1biu-celery-beat
+    env_file:
+      - ../.env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - db
+      - backend
     restart: always

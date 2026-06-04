@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMatchWebSocket } from "@/hooks/useMatchWebSocket";
 import { usePitchDetection } from "@/hooks/usePitchDetection";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const SONG_LEN_FALLBACK = 30;
 const HZ_MIN = 500;
@@ -61,7 +61,7 @@ export default function MatchPage() {
   const [progress, setProgress] = useState(0);
   const [target, setTarget] = useState(0.5);
   const [combo, setCombo] = useState(0);
-  const [phase, setPhase] = useState<"waiting" | "count" | "play">("waiting");
+  const [phase, setPhase] = useState<"waiting" | "tap" | "count" | "play">("waiting");
   const [count, setCount] = useState(3);
   const rafRef = useRef<number>(0);
 
@@ -71,166 +71,52 @@ export default function MatchPage() {
 
   useEffect(() => {
     if (status === "playing" && phase === "waiting") {
-      setPhase("count");
+      setPhase("tap");
     }
   }, [status, phase]);
 
+  // iOS Safari blocks audio.play() unless called synchronously inside a user gesture.
+  // We "unlock" the audio element here (play+pause in the tap handler), so the later
+  // programmatic play() at countdown end is allowed by WebKit.
+  const handleTapToStart = useCallback(() => {
+    if (!songUrl) return;
+
+    const proxyUrl = `/api/audio-proxy?url=${encodeURIComponent(songUrl)}`;
+    const audio = new Audio(proxyUrl);
+    audio.muted = true;
+    audio.play().then(() => {
+      audio.pause();
+      audio.muted = false;
+      audio.currentTime = 0;
+    }).catch(() => {});
+
+    audioRef.current = audio;
+    startMic();
+    setPhase("count");
+  }, [songUrl, startMic]);
+
   useEffect(() => {
     if (phase !== "count") return;
-    // if (count <= 0) {
-    //   setPhase("play");
-    //   startTimeRef.current = performance.now();
-
-    //   // if (songUrl) {
-    //   //   const audio = new Audio(songUrl);
-    //   //   audioRef.current = audio;
-    //   //   audio.muted = true;
-    //   //   audio.play().then(() => { audio.muted = false; }).catch(console.error);
-    //   //   audio.addEventListener("ended", sendSongEnded, { once: true });
-    //   // }
-
-    //   if (songUrl) {
-    //     console.log("songUrl:", songUrl);
-
-    //     const audio = new Audio();
-
-    //     audio.crossOrigin = "anonymous";
-    //     audio.preload = "auto";
-    //     audio.src = songUrl;
-
-    //     audioRef.current = audio;
-
-    //     audio.addEventListener("loadstart", () => {
-    //       console.log("audio loadstart");
-    //     });
-
-    //     audio.addEventListener("loadedmetadata", () => {
-    //       console.log("audio loadedmetadata");
-    //     });
-
-    //     audio.addEventListener("canplay", () => {
-    //       console.log("audio canplay");
-    //     });
-
-    //     audio.addEventListener("canplaythrough", async () => {
-    //       console.log("audio canplaythrough");
-
-    //       try {
-    //         audio.muted = true;
-
-    //         await audio.play();
-
-    //         audio.muted = false;
-
-    //         console.log("audio playing");
-    //       } catch (err) {
-    //         console.error("play error", err);
-    //       }
-    //     });
-
-    //     audio.addEventListener("error", () => {
-    //       console.error("audio error", {
-    //         code: audio.error?.code,
-    //         message: audio.error?.message,
-    //         networkState: audio.networkState,
-    //         readyState: audio.readyState,
-    //         currentSrc: audio.currentSrc,
-    //       });
-    //     });
-
-    //     audio.addEventListener("ended", sendSongEnded, {
-    //       once: true,
-    //     });
-
-    //     audio.load();
-    //   }
-
-    //   startMic();
-
-    //   frameRef.current = 0;
-    //   frameTimerRef.current = setInterval(() => { frameRef.current += 1; }, 50);
-    //   return;
-    // }
 
     if (count <= 0) {
       setPhase("play");
       startTimeRef.current = performance.now();
 
-      const startAudio = async () => {
-        if (!songUrl) return;
-
-        try {
-          const res = await fetch(songUrl, {
-            headers: {
-              "ngrok-skip-browser-warning": "true",
-            },
-          });
-
-          console.log("status", res.status);
-          console.log(
-            "content-type",
-            res.headers.get("content-type")
-          );
-
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
-
-          const blob = await res.blob();
-
-          console.log("blob type", blob.type);
-          console.log("blob size", blob.size);
-
-          const objectUrl = URL.createObjectURL(blob);
-
-          const audio = new Audio();
-
-          audio.preload = "auto";
-          audio.src = objectUrl;
-
-          audioRef.current = audio;
-
-          audio.addEventListener("error", () => {
-            console.error("audio error", {
-              error: audio.error,
-              networkState: audio.networkState,
-              readyState: audio.readyState,
-            });
-          });
-
-          audio.addEventListener(
-            "ended",
-            () => {
-              URL.revokeObjectURL(objectUrl);
-              sendSongEnded();
-            },
-            { once: true }
-          );
-
-          await audio.play();
-
-          console.log("audio started");
-        } catch (err) {
-          console.error("audio startup failed", err);
-        }
-      };
-
-
-      startAudio();
-
-      startMic();
+      const audio = audioRef.current;
+      if (audio) {
+        audio.addEventListener("ended", sendSongEnded, { once: true });
+        audio.currentTime = 0;
+        audio.play().catch(console.error);
+      }
 
       frameRef.current = 0;
-      frameTimerRef.current = setInterval(() => {
-        frameRef.current += 1;
-      }, 50);
-
+      frameTimerRef.current = setInterval(() => { frameRef.current += 1; }, 50);
       return;
     }
 
     const id = setTimeout(() => setCount((c) => c - 1), 750);
     return () => clearTimeout(id);
-  }, [phase, count, songUrl, startMic, sendSongEnded]);
+  }, [phase, count, sendSongEnded]);
 
   useEffect(() => {
     if (phase !== "play") return;
@@ -245,7 +131,6 @@ export default function MatchPage() {
         return;
       }
 
-      // Linha cinza segue o pitch real da música (dobrado para faixa de assobio)
       const currentFrame = frameRef.current;
       const refHz = pitchRef[currentFrame] ?? 0;
       setTarget(refHz > 0 ? refHzToNorm(refHz) : 0.5);
@@ -356,6 +241,18 @@ export default function MatchPage() {
           label={(rivalName ?? "rival").toUpperCase()}
           score={opponentScore}
         />
+
+        {phase === "tap" && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--bg) 85%, transparent)", backdropFilter: "blur(4px)", borderRadius: 16 }}>
+            <button
+              className="btn btn-primary btn-lg"
+              style={{ fontSize: 22, padding: "18px 48px", fontWeight: 800, letterSpacing: "-0.02em" }}
+              onClick={handleTapToStart}
+            >
+              toque para começar
+            </button>
+          </div>
+        )}
 
         {phase === "count" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "color-mix(in srgb, var(--bg) 80%, transparent)", backdropFilter: "blur(4px)", borderRadius: 16 }}>
