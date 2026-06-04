@@ -1,3 +1,4 @@
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 interface Player {
@@ -9,13 +10,9 @@ interface Player {
 }
 
 async function getRanking(): Promise<Player[]> {
-  const baseUrl = process.env.API_URL ?? "http://localhost:8000";
   try {
-    const res = await fetch(`${baseUrl}/ranking/`, {
-      next: { revalidate: 30 },
-    });
-    if (!res.ok) return [];
-    return res.json();
+    const res = await api.get("ranking");
+    return res.data as Player[];
   } catch {
     return [];
   }
