@@ -160,7 +160,11 @@ export default function MatchPage() {
         if (!songUrl) return;
 
         try {
-          const res = await fetch(songUrl);
+          const res = await fetch(songUrl, {
+            headers: {
+              "ngrok-skip-browser-warning": "true",
+            },
+          });
 
           console.log("status", res.status);
           console.log(
@@ -168,34 +172,49 @@ export default function MatchPage() {
             res.headers.get("content-type")
           );
 
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+
           const blob = await res.blob();
 
           console.log("blob type", blob.type);
           console.log("blob size", blob.size);
 
+          const objectUrl = URL.createObjectURL(blob);
+
           const audio = new Audio();
 
-          audio.crossOrigin = "anonymous";
           audio.preload = "auto";
-          audio.src = songUrl;
+          audio.src = objectUrl;
 
           audioRef.current = audio;
 
           audio.addEventListener("error", () => {
-            console.error("audio error", audio.error);
+            console.error("audio error", {
+              error: audio.error,
+              networkState: audio.networkState,
+              readyState: audio.readyState,
+            });
           });
 
           audio.addEventListener(
             "ended",
-            sendSongEnded,
+            () => {
+              URL.revokeObjectURL(objectUrl);
+              sendSongEnded();
+            },
             { once: true }
           );
 
           await audio.play();
+
+          console.log("audio started");
         } catch (err) {
           console.error("audio startup failed", err);
         }
       };
+
 
       startAudio();
 
