@@ -26,7 +26,10 @@ env = environ.Env(
     CELERY_BROKER_URL=(str, "redis://127.0.0.1:6379/0"),
     CELERY_TIMEZONE=(str, "America/Sao_Paulo"),
     DJANGO_DEFAULT_FILE_STORAGE=(str, "django.core.files.storage.FileSystemStorage"),
-    DJANGO_STATICFILES_STORAGE=(str, "whitenoise.storage.CompressedManifestStaticFilesStorage"),
+    DJANGO_STATICFILES_STORAGE=(
+        str,
+        "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    ),
     DJANGO_AWS_ACCESS_KEY_ID=(str, ""),
     DJANGO_AWS_SECRET_ACCESS_KEY=(str, ""),
     DJANGO_AWS_STORAGE_BUCKET_NAME=(str, ""),
@@ -76,7 +79,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # -----------------------------------------
 CORS_ALLOWED_ORIGINS = env("DJANGO_CORS_ALLOWED_ORIGINS")
 CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS")
-ALLOWED_HOSTS        = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
 
 # -----------------------------------------
 # Apps
@@ -117,8 +120,8 @@ INSTALLED_APPS = [
 # -----------------------------------------
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -153,12 +156,12 @@ TEMPLATES = [
 # -----------------------------------------
 DATABASES = {
     "default": {
-        "ENGINE":   env("DJANGO_DB_ENGINE"),
-        "NAME":     env("DJANGO_DB_NAME"),
-        "USER":     env("DJANGO_DB_USER"),
+        "ENGINE": env("DJANGO_DB_ENGINE"),
+        "NAME": env("DJANGO_DB_NAME"),
+        "USER": env("DJANGO_DB_USER"),
         "PASSWORD": env("DJANGO_DB_PASSWORD"),
-        "HOST":     env("DJANGO_DB_HOST"),
-        "PORT":     env("DJANGO_DB_PORT"),
+        "HOST": env("DJANGO_DB_HOST"),
+        "PORT": env("DJANGO_DB_PORT"),
     }
 }
 
@@ -189,7 +192,9 @@ CHANNEL_LAYERS = {
 AUTH_USER_MODEL = "management.User"
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -208,9 +213,9 @@ AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
-AXES_FAILURE_LIMIT       = env.int("AXES_FAILURE_LIMIT", default=5)
-AXES_COOLOFF_TIME        = timedelta(hours=1)
-AXES_RESET_ON_SUCCESS    = True
+AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=5)
+AXES_COOLOFF_TIME = timedelta(hours=1)
+AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_WAIT_RESPONSE = True
 
 # -----------------------------------------
@@ -238,9 +243,9 @@ REST_FRAMEWORK = {
 # Swagger
 # -----------------------------------------
 SPECTACULAR_SETTINGS = {
-    "TITLE":                "API",
-    "DESCRIPTION":          "Documentação da API",
-    "VERSION":              "1.0.0",
+    "TITLE": "API",
+    "DESCRIPTION": "Documentação da API",
+    "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
@@ -254,31 +259,31 @@ SIMPLE_JWT = {
 # -----------------------------------------
 # Static
 # -----------------------------------------
-STATIC_URL      = "/static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT     = os.path.join(BASE_DIR, "staticfiles")
-MEDIA_ROOT      = BASE_DIR / "media"
-MEDIA_URL       = "/media/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
 
 # -----------------------------------------
 # AWS
 # -----------------------------------------
-AWS_ACCESS_KEY_ID        = env("DJANGO_AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY    = env("DJANGO_AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME  = env("DJANGO_AWS_STORAGE_BUCKET_NAME")
-AWS_S3_SIGNATURE_NAME    = env("DJANGO_AWS_S3_SIGNATURE_NAME")
-AWS_S3_REGION_NAME       = env("DJANGO_AWS_S3_REGION_NAME")
-AWS_S3_FILE_OVERWRITE    = env.bool("DJANGO_AWS_S3_FILE_OVERWRITE", default=False)
-AWS_DEFAULT_ACL          = None
-AWS_S3_VERIFY            = env.bool("DJANGO_AWS_S3_VERIFY", default=False)
+AWS_ACCESS_KEY_ID = env("DJANGO_AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("DJANGO_AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("DJANGO_AWS_STORAGE_BUCKET_NAME")
+AWS_S3_SIGNATURE_NAME = env("DJANGO_AWS_S3_SIGNATURE_NAME")
+AWS_S3_REGION_NAME = env("DJANGO_AWS_S3_REGION_NAME")
+AWS_S3_FILE_OVERWRITE = env.bool("DJANGO_AWS_S3_FILE_OVERWRITE", default=False)
+AWS_DEFAULT_ACL = None
+AWS_S3_VERIFY = env.bool("DJANGO_AWS_S3_VERIFY", default=False)
 AWS_S3_CONNECTION_TIMEOUT = 60
-AWS_S3_READ_TIMEOUT      = 120
+AWS_S3_READ_TIMEOUT = 120
 
 # -----------------------------------------
 # Storages
 # -----------------------------------------
 STORAGES = {
-    "default":     {"BACKEND": env("DJANGO_DEFAULT_FILE_STORAGE")},
+    "default": {"BACKEND": env("DJANGO_DEFAULT_FILE_STORAGE")},
     "staticfiles": {"BACKEND": env("DJANGO_STATICFILES_STORAGE")},
 }
 
@@ -286,23 +291,23 @@ STORAGES = {
 # Localization
 # -----------------------------------------
 LANGUAGE_CODE = "pt-br"
-TIME_ZONE     = "America/Sao_Paulo"
-USE_I18N      = True
-USE_TZ        = True
+TIME_ZONE = "America/Sao_Paulo"
+USE_I18N = True
+USE_TZ = True
 
 LANGUAGES = (
-    ("en",    _("English")),
-    ("es",    _("Spanish")),
+    ("en", _("English")),
+    ("es", _("Spanish")),
     ("pt-br", _("Portuguese")),
 )
 
 # -----------------------------------------
 # Celery Worker
 # -----------------------------------------
-CELERY_BROKER_URL        = env("CELERY_BROKER_URL")
-CELERY_TIMEZONE          = env("CELERY_TIMEZONE")
-CELERY_ACCEPT_CONTENT    = ["json"]
-CELERY_TASK_SERIALIZER   = "json"
+CELERY_BROKER_URL = env("CELERY_BROKER_URL")
+CELERY_TIMEZONE = env("CELERY_TIMEZONE")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 # -----------------------------------------
