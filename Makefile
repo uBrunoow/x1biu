@@ -5,7 +5,7 @@ install:
 	cd frontend && pnpm install
 
 backend:
-	cd backend && uv run daphne -b 0.0.0.0 -p 8000 config.asgi:application
+	cd backend && uv run hypercorn -b 0.0.0.0 -p 8000 config.asgi:application
 
 runserver:
 	cd backend && uv run python manage.py runserver 0.0.0.0:8000

@@ -81,13 +81,70 @@ export default function MatchPage() {
       setPhase("play");
       startTimeRef.current = performance.now();
 
+      // if (songUrl) {
+      //   const audio = new Audio(songUrl);
+      //   audioRef.current = audio;
+      //   audio.muted = true;
+      //   audio.play().then(() => { audio.muted = false; }).catch(console.error);
+      //   audio.addEventListener("ended", sendSongEnded, { once: true });
+      // }
+
       if (songUrl) {
-        const audio = new Audio(songUrl);
+        console.log("songUrl:", songUrl);
+
+        const audio = new Audio();
+
+        audio.crossOrigin = "anonymous";
+        audio.preload = "auto";
+        audio.src = songUrl;
+
         audioRef.current = audio;
-        audio.muted = true;
-        audio.play().then(() => { audio.muted = false; }).catch(console.error);
-        audio.addEventListener("ended", sendSongEnded, { once: true });
+
+        audio.addEventListener("loadstart", () => {
+          console.log("audio loadstart");
+        });
+
+        audio.addEventListener("loadedmetadata", () => {
+          console.log("audio loadedmetadata");
+        });
+
+        audio.addEventListener("canplay", () => {
+          console.log("audio canplay");
+        });
+
+        audio.addEventListener("canplaythrough", async () => {
+          console.log("audio canplaythrough");
+
+          try {
+            audio.muted = true;
+
+            await audio.play();
+
+            audio.muted = false;
+
+            console.log("audio playing");
+          } catch (err) {
+            console.error("play error", err);
+          }
+        });
+
+        audio.addEventListener("error", () => {
+          console.error("audio error", {
+            code: audio.error?.code,
+            message: audio.error?.message,
+            networkState: audio.networkState,
+            readyState: audio.readyState,
+            currentSrc: audio.currentSrc,
+          });
+        });
+
+        audio.addEventListener("ended", sendSongEnded, {
+          once: true,
+        });
+
+        audio.load();
       }
+
       startMic();
 
       frameRef.current = 0;

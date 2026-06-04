@@ -18,7 +18,7 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-MEDIA_URL = "http://localhost:8000/media/"
+MEDIA_URL = "https://veronique-maniform-nonboastingly.ngrok-free.dev/media/"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

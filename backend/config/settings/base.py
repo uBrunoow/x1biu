@@ -80,6 +80,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOWED_ORIGINS = env("DJANGO_CORS_ALLOWED_ORIGINS")
 CSRF_TRUSTED_ORIGINS = env("DJANGO_CSRF_TRUSTED_ORIGINS")
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+CORS_EXPOSE_HEADERS = [
+    "Content-Type",
+    "Content-Length",
+    "Accept-Ranges",
+    "Content-Range",
+]
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # -----------------------------------------
 # Apps
@@ -263,7 +270,7 @@ STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = "/media/"
+MEDIA_URL = "https://veronique-maniform-nonboastingly.ngrok-free.dev/media/"
 
 # -----------------------------------------
 # AWS
